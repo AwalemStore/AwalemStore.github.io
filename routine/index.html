@@ -203,31 +203,39 @@ async function handleLogin() {
     errorMsg.style.display = "none";
     btn.innerText = "...جاري التحقق";
     btn.style.opacity = "0.7";
-async function handleLogin() {
-    let phoneInput = document.getElementById("userPhone").value.trim();
-    const btn = document.getElementById("verify-btn");
-    const errorMsg = document.getElementById("error-msg");
 
-    // 1. التحقق المطور: يقبل الرقم سواء بدأ بـ 05 أو 5 مباشرة
-    if (!/^(05|5)\d{8}$/.test(phoneInput)) {
-        errorMsg.innerText = "يرجى إدخال رقم جوال صحيح";
+    const deviceId = getDeviceId();
+
+    try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                'phone': phoneInput,
+                'deviceId': deviceId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // إخفاء شاشة الدخول وتفعيل المنصة
+            document.getElementById("auth-screen").style.display = "none";
+            localStorage.setItem("smart_routine_logged_in", "true");
+            localStorage.setItem("smart_routine_user_phone", phoneInput);
+        } else {
+            errorMsg.innerText = data.message || data.msg;
+            errorMsg.style.display = "block";
+            btn.innerText = "تسجيل الدخول";
+            btn.style.opacity = "1";
+        }
+    } catch (error) {
+        errorMsg.innerText = "حدث خطأ في الاتصال، حاولي مرة أخرى.";
         errorMsg.style.display = "block";
-        return;
+        btn.innerText = "تسجيل الدخول";
+        btn.style.opacity = "1";
     }
-
-    // 2. توحيد الرقم: لو بدأ بـ 0 نشيله عشان يطابق الإكسل (530xxxx)
-    if (phoneInput.startsWith('0')) {
-        phoneInput = phoneInput.substring(1);
-    }
-
-    // 3. تجهيز الواجهة للتحقق
-    errorMsg.style.display = "none";
-    btn.innerText = "...جاري التحقق";
-    btn.style.opacity = "0.7";
-
-    const deviceId = getDeviceId();
-    const deviceId = getDeviceId();
-
+}
     try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
